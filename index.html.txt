@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Ads Performance Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- For charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script> <!-- For CSV parsing -->
+</head>
+<body>
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="upload-box">
+                <label for="ltv-sheet">Upload LTV Sheet</label>
+                <input type="file" id="ltv-sheet" accept=".csv">
+            </div>
+            <div class="upload-box">
+                <label for="google-ads-sheet">Upload Google Ads Sheet</label>
+                <input type="file" id="google-ads-sheet" accept=".csv">
+            </div>
+            <button onclick="analyzeData()">Analyze</button>
+        </div>
+
+        <!-- Underperforming Campaigns -->
+        <div class="section">
+            <h2>Underperforming Campaigns</h2>
+            <div class="filters">
+                <label>Cost Filter: <input type="number" id="cost-filter-under" placeholder="e.g., 500"></label>
+                <label>Date Range: 
+                    <input type="date" id="start-date-under"> to 
+                    <input type="date" id="end-date-under">
+                </label>
+            </div>
+            <table id="underperforming-table">
+                <thead>
+                    <tr>
+                        <th>Country</th>
+                        <th>Campaign Name</th>
+                        <th>LTV Name</th>
+                        <th>Cost</th>
+                        <th>Clicks</th>
+                        <th>CTR</th>
+                        <th>Cost/Conv.</th>
+                        <th>LTV</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Best Performing Campaigns -->
+        <div class="section">
+            <h2>Best Performing Campaigns</h2>
+            <div class="filters">
+                <label>Cost Filter: <input type="number" id="cost-filter-best" placeholder="e.g., 500"></label>
+                <label>Date Range: 
+                    <input type="date" id="start-date-best"> to 
+                    <input type="date" id="end-date-best">
+                </label>
+            </div>
+            <table id="bestperforming-table">
+                <thead>
+                    <tr>
+                        <th>Country</th>
+                        <th>Campaign Name</th>
+                        <th>LTV Name</th>
+                        <th>Cost</th>
+                        <th>Clicks</th>
+                        <th>CTR</th>
+                        <th>Cost/Conv.</th>
+                        <th>LTV</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Top 10 Campaigns Graph -->
+        <div class="section">
+            <h2>Top 10 Campaigns</h2>
+            <div class="filters">
+                <label>Cost Filter: <input type="number" id="cost-filter-top10" placeholder="e.g., 500"></label>
+                <label>Date Range: 
+                    <input type="date" id="start-date-top10"> to 
+                    <input type="date" id="end-date-top10">
+                </label>
+            </div>
+            <canvas id="top10-chart"></canvas>
+        </div>
+
+        <!-- Bottom 10 Campaigns Graph -->
+        <div class="section">
+            <h2>Bottom 10 Campaigns</h2>
+            <div class="filters">
+                <label>Cost Filter: <input type="number" id="cost-filter-bottom10" placeholder="e.g., 500"></label>
+                <label>Date Range: 
+                    <input type="date" id="start-date-bottom10"> to 
+                    <input type="date" id="end-date-bottom10">
+                </label>
+            </div>
+            <canvas id="bottom10-chart"></canvas>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

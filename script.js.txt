@@ -1,0 +1,157 @@
+let ltvData = [];
+let googleAdsData = [];
+
+function analyzeData() {
+    const ltvFile = document.getElementById('ltv-sheet').files[0];
+    const googleAdsFile = document.getElementById('google-ads-sheet').files[0];
+
+    if (!ltvFile || !googleAdsFile) {
+        alert('Please upload both files.');
+        return;
+    }
+
+    // Parse LTV Sheet
+    Papa.parse(ltvFile, {
+        header: true,
+        complete: function(results) {
+            ltvData = results.data;
+            // Parse Google Ads Sheet
+            Papa.parse(googleAdsFile, {
+                header: true,
+                complete: function(results) {
+                    googleAdsData = results.data;
+                    processData();
+                }
+            });
+        }
+    });
+}
+
+function processData() {
+    // Determine platform for each campaign
+    googleAdsData.forEach(row => {
+        if (row.Campaign.includes('IOS')) {
+            row.Platform = 'ios';
+        } else if (row.Campaign.includes('Android')) {
+            row.Platform = 'android';
+        } else {
+            row.Platform = 'web';
+        }
+    });
+
+    // Underperforming Campaigns
+    const underperforming = filterCampaigns(true);
+    renderTable('underperforming-table', underperforming);
+
+    // Best Performing Campaigns
+    const bestPerforming = filterCampaigns(false);
+    renderTable('bestperforming-table', bestPerforming);
+
+    // Top 10 Campaigns Graph
+    renderChart('top10-chart', bestPerforming.slice(0, 10), 'Top 10 Campaigns');
+
+    // Bottom 10 Campaigns Graph
+    renderChart('bottom10-chart', underperforming.slice(0, 10), 'Bottom 10 Campaigns');
+}
+
+function filterCampaigns(isUnderperforming) {
+    const costFilter = parseFloat(document.getElementById(isUnderperforming ? 'cost-filter-under' : 'cost-filter-best').value) || 0;
+    const startDate = new Date(document.getElementById(isUnderperforming ? 'start-date-under' : 'start-date-best').value);
+    const endDate = new Date(document.getElementById(isUnderperforming ? 'end-date-under' : 'end-date-best').value);
+
+    const filteredData = googleAdsData.filter(row => {
+        const rowDate = new Date(row.Day);
+        const cost = parseFloat(row.Cost);
+
+        // Apply cost and date filters
+        if (cost < costFilter) return false;
+        if (startDate && rowDate < startDate) return false;
+        if (endDate && rowDate > endDate) return false;
+
+        // Find matching LTV
+        const ltvMatch = ltvData.find(ltv => 
+            ltv.Country === row['Country/Territory (Matched)'] && 
+            ltv.Registered === row.Platform
+        );
+
+        if (!ltvMatch) return false;
+
+        row.LTV = parseFloat(ltvMatch.LTV);
+        row.LTVName = ltvMatch.Combined;
+        const costPerConv = parseFloat(row['Cost / conv.']);
+
+        // Compare LTV and Cost per Conversion
+        if (isUnderperforming) {
+            return row.LTV > costPerConv;
+        } else {
+            return row.LTV < costPerConv;
+        }
+    });
+
+    return filteredData;
+}
+
+function renderTable(tableId, data) {
+    const tbody = document.getElementById(tableId).querySelector('tbody');
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row['Country/Territory (Matched)']}</td>
+            <td>${row.Campaign}</td>
+            <td>${row.LTVName}</td>
+            <td>${row.Cost}</td>
+            <td>${row.Clicks}</td>
+            <td>${row.CTR}</td>
+            <td>${row['Cost / conv.']}</td>
+            <td>${row.LTV}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderChart(chartId, data, title) {
+    const ctx = document.getElementById(chartId).getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(row => row.LTVName),
+            datasets: [
+                {
+                    label: 'Cost/Conv.',
+                    data: data.map(row => parseFloat(row['Cost / conv.'])),
+                    backgroundColor: 'blue'
+                },
+                {
+                    label: 'LTV',
+                    data: data.map(row => row.LTV),
+                    backgroundColor: 'red'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cost/Conv. and LTV'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: title
+                }
+            }
+        }
+    });
+}
+
+// Add event listeners for filters
+document.querySelectorAll('.filters input').forEach(input => {
+    input.addEventListener('change', processData);
+});
